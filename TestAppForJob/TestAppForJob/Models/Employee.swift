@@ -7,13 +7,27 @@
 
 import Foundation
 
-struct Employee {
-    let id: Int
+// MARK: - Employee
+struct Employee: Codable {
+    let id: String
+    let avatarURL: String
     let firstName: String
     let lastName: String
-    let nickname: String
+    let userTag: String
     let department: String
-    let birthDate: Date
-    let phoneNumber: String
-    let photoURL: URL
+    let position: String
+    let birthday: String
+    let phone: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case avatarURL = "avatarUrl"
+        case firstName
+        case lastName
+        case userTag
+        case department
+        case position
+        case birthday
+        case phone
+    }
 }
