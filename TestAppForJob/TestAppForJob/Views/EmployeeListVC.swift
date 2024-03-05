@@ -9,43 +9,53 @@ import Kingfisher
 import SnapKit
 import UIKit
 
-class EmployeeListVC: UIViewController {
-    
-    private var viewModel: EmployeeListVC!
-    private var employees: [Employee] = []
+final class EmployeeListVC: UIViewController {
+    private var viewModel: EmployeeListViewModel!
+    private var refreshControl: UIRefreshControl?
+    private var tableView = UITableView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tableView.register(EmployeeTableViewCell.self, forCellReuseIdentifier: "cell")
+        
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-       // tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(EmployeeTableViewCell.self, forCellReuseIdentifier: "cell")
         
-        APIManager.shared.getEmployees { result in
-            switch result {
-            case .success(let employees):
-                // Обработка успешного получения данных
-                DispatchQueue.main.async {
-                    self.viewModel.employees = employees.items
+        tableView.rowHeight = 100
+        tableView.dataSource = self
+        
+        refreshControl = UIRefreshControl()
+        tableView.addSubview(refreshControl!)
+        
+        viewModel = EmployeeListViewModel()
+        refreshControl!.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        
+        viewModel.fetchEmployees { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
                     self.tableView.reloadData()
+                case .failure(let error):
+                    print(error)
                 }
-            case .failure(let error):
-                // Обработка ошибки
-                print(error)
             }
         }
-        
-        viewModel = EmployeeListVC()
     }
     
-    // MARK: Private properties
-    private var tableView = UITableView()
+    // MARK: Private methods
+    
+    @objc private func refreshData() {
+        viewModel.refreshData()
+        tableView.reloadData()
+        refreshControl!.endRefreshing()
+    }
 }
 
 // MARK: - UITableViewDataSource
+
 extension EmployeeListVC: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { viewModel.employees.count }
     
@@ -54,26 +64,30 @@ extension EmployeeListVC: UITableViewDataSource {
         let employee = viewModel.employees[indexPath.row]
         cell.fullNameLabel.text = "\(employee.firstName) \(employee.lastName)"
         cell.positionLabel.text = employee.position
+        cell.userTagLabel.text = employee.userTag
         cell.photoImageView.image = UIImage(named: "placeholder")
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+        // Изменение шрифта для fullNameLabel
+        cell.fullNameLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        
+        // Изменение шрифта и цвета + прозрачность для userTagLabel
+        cell.userTagLabel.textColor = UIColor.gray.withAlphaComponent(0.8)
+        cell.userTagLabel.font = UIFont.systemFont(ofSize: 12)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             // Загрузка изображения с использованием Kingfisher
             if let avatarURL = URL(string: employee.avatarURL) {
-                  cell.photoImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "placeholder")) { result in
-                      switch result {
-                      case .success(let value):
-                          cell.photoImageView.image = value.image
-                          cell.setNeedsLayout() // Обновите ячейку после загрузки изображения
-                      case .failure(let error):
-                          print("Error loading image: \(error)")
-                      }
-                  }
-              }
+                cell.photoImageView.kf.setImage(with: avatarURL, placeholder: UIImage(named: "placeholder")) { result in
+                    switch result {
+                    case .success(let value):
+                        cell.photoImageView.image = value.image
+                        cell.layoutIfNeeded()
+                    case .failure(let error):
+                        print("Error loading image: \(error)")
+                    }
+                }
+            }
         }
-        
         return cell
     }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 120 }
-    private func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 45 }
 }
