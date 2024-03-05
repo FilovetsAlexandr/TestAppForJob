@@ -7,6 +7,11 @@
 
 import Foundation
 
-struct EmployeesResponse {
-    let employees: [Employee]
+// MARK: - Employees
+struct Employees: Codable {
+    let items: [Employee]
+    
+    enum CodingKeys: String, CodingKey {
+            case items
+        }
 }
