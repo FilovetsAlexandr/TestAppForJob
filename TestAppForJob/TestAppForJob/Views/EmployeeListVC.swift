@@ -160,7 +160,9 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EmployeeTableViewCell.identifier, for: indexPath) as? EmployeeTableViewCell else { fatalError("Unable to dequeue EmployeeCell") }
         
         let employee = viewModel.filteredEmployees[indexPath.row]
-        cell.configure(with: employee)
+        let cellViewModel = EmployeeTableViewCellViewModel(employee: employee)
+        cell.configure(with: cellViewModel)
+        
         return cell
     }
     
@@ -175,6 +177,8 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
+// MARK: - CollectionView Functions
+
 extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { viewModel.categories.count }
     
@@ -183,7 +187,10 @@ extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFl
         
         let categories = viewModel.categories
         let category = categories[indexPath.item]
-        cell.nameCategoryLabel.text = category
+        let isSelected = indexPath.item == viewModel.selectedCategoryIndex
+        let categoryViewModel = EmployeeHorizontalCategoriesCellViewModel(category: category, isSelected: isSelected)
+        cell.configure(with: categoryViewModel)
+        
         return cell
     }
     
@@ -193,9 +200,12 @@ extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFl
         
         let categories = viewModel.categories
         let category = categories[indexPath.item]
-        cell.nameCategoryLabel.text = category
+        let isSelected = indexPath.item == viewModel.selectedCategoryIndex
+        let categoryViewModel = EmployeeHorizontalCategoriesCellViewModel(category: category, isSelected: isSelected)
+        cell.configure(with: categoryViewModel)
         
         let size = cell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        
         return CGSize(width: size.width + 15, height: 30)
     }
 }

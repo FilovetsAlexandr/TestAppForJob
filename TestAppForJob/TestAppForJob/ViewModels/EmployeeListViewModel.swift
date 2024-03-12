@@ -8,20 +8,27 @@
 import UIKit
 
 final class EmployeeListViewModel {
+    // MARK: - Properties
+    
+    let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
+    
     private var employees: [Employee] = []
-    var filteredEmployees: [Employee] = []
     private var categoryFilteredEmployees: [Employee] = []
+    private var inSearchMode: Bool = false
+    
+    var filteredEmployees: [Employee] = []
     var onEmployeesUpdated: (() -> Void)?
     var onErrorMessage: ((Error) -> Void)?
-    let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
-    private var inSearchMode: Bool = false
-    private var selectedCategoryIndex: Int = 0
+    var selectedCategoryIndex: Int = 0
+    
+    // MARK: - Public Methods
     
     func fetchEmployees() {
         APIManager.shared.getEmployees { [weak self] result in
             switch result {
             case .success(let response):
                 self?.employees = response.items
+                self?.categoryFilteredEmployees = response.items
                 self?.filteredEmployees = response.items
                 self?.onEmployeesUpdated?()
             case .failure(let error):
@@ -66,17 +73,17 @@ final class EmployeeListViewModel {
     }
     
     func updateSearchResults(searchText: String?) {
-          guard let searchText = searchText?.lowercased(), !searchText.isEmpty else {
-              filteredEmployees = categoryFilteredEmployees
-              onEmployeesUpdated?()
-              return
-          }
+        guard let searchText = searchText?.lowercased(), !searchText.isEmpty else {
+            filteredEmployees = categoryFilteredEmployees
+            onEmployeesUpdated?()
+            return
+        }
           
-          filteredEmployees = categoryFilteredEmployees.filter { employee in
-              employee.firstName.lowercased().contains(searchText) ||
-              employee.lastName.lowercased().contains(searchText) ||
-              employee.userTag.lowercased().contains(searchText)
-          }
-          onEmployeesUpdated?()
-      }
+        filteredEmployees = categoryFilteredEmployees.filter { employee in
+            employee.firstName.lowercased().contains(searchText) ||
+                employee.lastName.lowercased().contains(searchText) ||
+                employee.userTag.lowercased().contains(searchText)
+        }
+        onEmployeesUpdated?()
+    }
 }

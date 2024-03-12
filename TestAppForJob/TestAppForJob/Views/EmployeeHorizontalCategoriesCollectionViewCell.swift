@@ -8,8 +8,13 @@
 import UIKit
 
 final class EmployeeHorizontalCategoriesCollectionViewCell: UICollectionViewCell {
+    // MARK: - Variables
     
-    let nameCategoryLabel: UILabel = {
+    private var viewModel: EmployeeHorizontalCategoriesCellViewModel?
+    
+    // MARK: - UI Components
+    
+    private let nameLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
         label.textColor = .gray
@@ -18,7 +23,7 @@ final class EmployeeHorizontalCategoriesCollectionViewCell: UICollectionViewCell
         return label
     }()
     
-    let selectionView: UIView = {
+    private let selectionView: UIView = {
         let view = UIView()
         view.backgroundColor = #colorLiteral(red: 0.3981328607, green: 0.2060295343, blue: 1, alpha: 1)
         view.isHidden = true
@@ -27,16 +32,16 @@ final class EmployeeHorizontalCategoriesCollectionViewCell: UICollectionViewCell
     
     override var isSelected: Bool {
         didSet {
-            nameCategoryLabel.textColor = self.isSelected ? .black : .gray
-            selectionView.isHidden = !self.isSelected
+            nameLabel.textColor = isSelected ? .black : .gray
+            selectionView.isHidden = !isSelected
         }
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        contentView.addSubview(nameCategoryLabel)
-        nameCategoryLabel.snp.makeConstraints { make in
+        contentView.addSubview(nameLabel)
+        nameLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
         
@@ -49,7 +54,14 @@ final class EmployeeHorizontalCategoriesCollectionViewCell: UICollectionViewCell
         contentView.backgroundColor = .systemBackground
     }
     
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func configure(with viewModel: EmployeeHorizontalCategoriesCellViewModel) {
+        self.viewModel = viewModel
+        nameLabel.text = viewModel.category
+        isSelected = viewModel.isSelected
     }
 }

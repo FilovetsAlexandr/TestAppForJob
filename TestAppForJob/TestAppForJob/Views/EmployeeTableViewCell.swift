@@ -5,16 +5,16 @@
 //  Created by Alexandr Filovets on 5.03.24.
 //
 
-import SnapKit
 import Kingfisher
+import SnapKit
 import UIKit
 
 final class EmployeeTableViewCell: UITableViewCell {
-    
     static let identifier = "EmployeeTableViewCell"
     
     // MARK: - Variables
-    private(set) var employee: Employee!
+      
+    private var viewModel: EmployeeTableViewCellViewModel?
     
     // MARK: - UI Components
     
@@ -51,24 +51,25 @@ final class EmployeeTableViewCell: UITableViewCell {
     }()
     
     // MARK: - Lifecycle
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
     
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func configure(with employee: Employee) {
-        self.employee = employee
-        
-        fullNameLabel.text = employee.firstName + (" ") + employee.lastName
-        positionLabel.text = employee.position
-        userTagLabel.text = employee.userTag
+    public func configure(with viewModel: EmployeeTableViewCellViewModel) {
+        self.viewModel = viewModel
+          
+        fullNameLabel.text = viewModel.fullName
+        positionLabel.text = viewModel.position
+        userTagLabel.text = viewModel.userTag
 
-        let url = URL(string: employee.avatarURL)
-        photoImageView.kf.setImage(with: url, placeholder: UIImage(named: "placeholder"))
+        photoImageView.kf.setImage(with: viewModel.avatarURL, placeholder: UIImage(named: "placeholder"))
     }
     
     override func prepareForReuse() {
@@ -80,6 +81,7 @@ final class EmployeeTableViewCell: UITableViewCell {
     }
     
     // MARK: - UI Setup
+
     private func setupUI() {
         addSubview(photoImageView)
         addSubview(fullNameLabel)
