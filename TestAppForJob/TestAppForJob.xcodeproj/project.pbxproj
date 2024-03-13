@@ -22,6 +22,8 @@
 		F4BC8C002B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8BFF2B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift */; };
 		F4BC8C022BA068D100C542DD /* EmployeeTableViewCellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8C012BA068D100C542DD /* EmployeeTableViewCellViewModel.swift */; };
 		F4BC8C042BA06E4900C542DD /* EmployeeHorizontalCategoriesCellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8C032BA06E4900C542DD /* EmployeeHorizontalCategoriesCellViewModel.swift */; };
+		F4BC8C062BA0826200C542DD /* EmployeeFiltersModalVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8C052BA0826200C542DD /* EmployeeFiltersModalVC.swift */; };
+		F4BC8C092BA1A34D00C542DD /* UIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8C082BA1A34D00C542DD /* UIImage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +42,8 @@
 		F4BC8BFF2B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeeHorizontalCategoriesCollectionViewCell.swift; sourceTree = "<group>"; };
 		F4BC8C012BA068D100C542DD /* EmployeeTableViewCellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeeTableViewCellViewModel.swift; sourceTree = "<group>"; };
 		F4BC8C032BA06E4900C542DD /* EmployeeHorizontalCategoriesCellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeeHorizontalCategoriesCellViewModel.swift; sourceTree = "<group>"; };
+		F4BC8C052BA0826200C542DD /* EmployeeFiltersModalVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeeFiltersModalVC.swift; sourceTree = "<group>"; };
+		F4BC8C082BA1A34D00C542DD /* UIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				F4BC8BDA2B964EDE00C542DD /* Resources */,
+				F4BC8C072BA1A32300C542DD /* Extensions */,
 				F4BC8BE92B965B1A00C542DD /* Managers */,
 				F4BC8BDB2B964FCA00C542DD /* Models */,
 				F4BC8BDD2B964FF600C542DD /* Views */,
@@ -120,6 +125,7 @@
 				F4BC8BE22B96515200C542DD /* EmployeeListVC.swift */,
 				F4BC8BEF2B969FEF00C542DD /* EmployeeTableViewCell.swift */,
 				F4BC8BFF2B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift */,
+				F4BC8C052BA0826200C542DD /* EmployeeFiltersModalVC.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -130,6 +136,14 @@
 				F4BC8BEA2B965B6300C542DD /* APIManager.swift */,
 			);
 			path = Managers;
+			sourceTree = "<group>";
+		};
+		F4BC8C072BA1A32300C542DD /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				F4BC8C082BA1A34D00C542DD /* UIImage.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,10 +229,12 @@
 				F4BC8C022BA068D100C542DD /* EmployeeTableViewCellViewModel.swift in Sources */,
 				F4BC8C002B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift in Sources */,
 				F4BC8BC72B964DBC00C542DD /* AppDelegate.swift in Sources */,
+				F4BC8C062BA0826200C542DD /* EmployeeFiltersModalVC.swift in Sources */,
 				F4BC8BE32B96515200C542DD /* EmployeeListVC.swift in Sources */,
 				F4BC8BDF2B9650B500C542DD /* Employee.swift in Sources */,
 				F4BC8BC92B964DBC00C542DD /* SceneDelegate.swift in Sources */,
 				F4BC8BF22B972C6600C542DD /* EmployeeListViewModel.swift in Sources */,
+				F4BC8C092BA1A34D00C542DD /* UIImage.swift in Sources */,
 				F4BC8C042BA06E4900C542DD /* EmployeeHorizontalCategoriesCellViewModel.swift in Sources */,
 				F4BC8BEB2B965B6300C542DD /* APIManager.swift in Sources */,
 			);
@@ -290,7 +306,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -347,7 +363,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

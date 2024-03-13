@@ -14,7 +14,7 @@ final class EmployeeListVC: UIViewController {
     private let viewModel: EmployeeListViewModel
     
     // MARK: - UI Components
-
+    
     private let searchController = UISearchController(searchResultsController: nil)
     private let tableView: UITableView = {
         let tv = UITableView()
@@ -43,6 +43,25 @@ final class EmployeeListVC: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Загрузка состояния переключателей из UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")
+        
+        // Применение выбранной сортировки
+        if alphabetSwitchState {
+            viewModel.sortEmployeesAlphabetically()
+        } else if birthdaySwitchState {
+//            viewModel.sortEmployeesByBirthday()
+        } else {
+            viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex)
+        }
+        
+        // ...
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -50,10 +69,16 @@ final class EmployeeListVC: UIViewController {
         setupCollectionViewAndTableView()
         fetchData()
         setupNotFoundImageView()
+        // Проверяем значение alphabetSwitch.isSelected в UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        if alphabetSwitchState {
+            // Если переключатель был выбран, сортируем пользователей по алфавиту
+            viewModel.employees.sort { $0.firstName < $1.firstName }
+        }
     }
     
     // MARK: - UI Setup
-    
+
     private func setupUI() {
         view.backgroundColor = .systemBackground
     }
@@ -145,9 +170,12 @@ extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
         viewModel.updateSearchResults(searchText: searchController.searchBar.text)
         notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty
     }
-    
+
     func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
-        print("bookmark clicked")
+        let filtersModalVC = EmployeeFiltersModalVC()
+        filtersModalVC.delegate = self
+        filtersModalVC.modalPresentationStyle = .overCurrentContext
+        present(filtersModalVC, animated: false, completion: nil)
     }
 }
 
@@ -170,7 +198,6 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
 //        let employee = viewModel.filteredEmployees[indexPath.row]
 //        let employeeDetailsVC = EmployeeDetailVC(employee)
 //        navigationController?.pushViewController(employeeDetailsVC, animated: true)
@@ -214,5 +241,22 @@ extension EmployeeListVC: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         viewModel.handleCategorySelection(at: indexPath.item)
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+    }
+}
+
+extension EmployeeListVC: CustomModalViewControllerDelegate {
+    func didCloseModalViewController() {
+        // Загрузка состояния переключателей из UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")
+        
+        // Применение выбранной сортировки
+        if alphabetSwitchState {
+            viewModel.sortEmployeesAlphabetically()
+        } else if birthdaySwitchState {
+            viewModel.sortEmployeesByBirthday()
+        } else {
+            viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex)
+        }
     }
 }

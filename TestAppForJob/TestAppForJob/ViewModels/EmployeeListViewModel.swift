@@ -12,7 +12,9 @@ final class EmployeeListViewModel {
     
     let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
     
-    private var employees: [Employee] = []
+    var isAlphabeticallySorted: Bool = false
+    private var isFetchingData = false
+    var employees: [Employee] = []
     private var categoryFilteredEmployees: [Employee] = []
     private var inSearchMode: Bool = false
     
@@ -23,14 +25,39 @@ final class EmployeeListViewModel {
     
     // MARK: - Public Methods
     
+    func sortEmployeesAlphabetically() {
+        filteredEmployees.sort { $0.firstName < $1.firstName }
+        onEmployeesUpdated?()
+    }
+    
+    func sortEmployeesByBirthday() {
+        filteredEmployees.sort { $0.birthday < $1.birthday }
+        onEmployeesUpdated?()
+    }
+    
     func fetchEmployees() {
+        guard !isFetchingData else { return }
+            
+        isFetchingData = true
+            
         APIManager.shared.getEmployees { [weak self] result in
+            self?.isFetchingData = false
+                
             switch result {
             case .success(let response):
                 self?.employees = response.items
                 self?.categoryFilteredEmployees = response.items
                 self?.filteredEmployees = response.items
-                self?.onEmployeesUpdated?()
+                    
+                // Проверяем значение alphabetSwitch.isSelected в UserDefaults
+                let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+                if alphabetSwitchState {
+                    // Если переключатель был выбран, сортируем пользователей по алфавиту
+                    self?.sortEmployeesAlphabetically()
+                } else {
+                    self?.onEmployeesUpdated?()
+                }
+                    
             case .failure(let error):
                 self?.onErrorMessage?(error)
             }
@@ -69,7 +96,11 @@ final class EmployeeListViewModel {
             categoryFilteredEmployees = employees
         }
         filteredEmployees = categoryFilteredEmployees
-        onEmployeesUpdated?()
+        if let alphabetSwitchState = UserDefaults.standard.object(forKey: "AlphabetSwitchState") as? Bool, alphabetSwitchState {
+               sortEmployeesAlphabetically()
+           } else {
+               onEmployeesUpdated?()
+           }
     }
     
     func updateSearchResults(searchText: String?) {
@@ -78,7 +109,7 @@ final class EmployeeListViewModel {
             onEmployeesUpdated?()
             return
         }
-          
+        
         filteredEmployees = categoryFilteredEmployees.filter { employee in
             employee.firstName.lowercased().contains(searchText) ||
                 employee.lastName.lowercased().contains(searchText) ||
