@@ -8,16 +8,19 @@
 import SnapKit
 import UIKit
 
+protocol FiltersModalVCDelegate: AnyObject {
+    func didCloseFiltersModalVC()
+}
+
 class EmployeeFiltersModalVC: UIViewController {
-    
-    weak var delegate: CustomModalViewControllerDelegate?
+    weak var delegate: FiltersModalVCDelegate?
     
     var containerViewHeightConstraint: Constraint?
     var containerViewBottomConstraint: Constraint?
 
     lazy var backButton: UIButton = {
         let button = UIButton(type: .system)
-        let image = UIImage(named: "vector")
+        let image = UIImage(named: "backVector")
         button.setImage(image, for: .normal)
         button.tintColor = #colorLiteral(red: 0.1079650596, green: 0.1179667488, blue: 0.1391604543, alpha: 1)
         let newButtonSize = CGRect(x: 0, y: 0, width: 6, height: 12)
@@ -125,12 +128,6 @@ class EmployeeFiltersModalVC: UIViewController {
         backButton.isHidden = true
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        UserDefaults.standard.set(alphabetSwitch.isSelected, forKey: "AlphabetSwitchState")
-        UserDefaults.standard.set(birthdaySwitch.isSelected, forKey: "BirthdaySwitchState")
-    }
-    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         animateShowDimmedView()
@@ -183,7 +180,7 @@ class EmployeeFiltersModalVC: UIViewController {
         UserDefaults.standard.set(birthdaySwitch.isSelected, forKey: "BirthdaySwitchState")
         
         // Закрываем модальное окно
-        delegate?.didCloseModalViewController()
+        delegate?.didCloseFiltersModalVC()
         dismiss(animated: true, completion: nil)
     }
         
@@ -291,8 +288,4 @@ class EmployeeFiltersModalVC: UIViewController {
             self.view.layoutIfNeeded()
         }
     }
-}
-
-protocol CustomModalViewControllerDelegate: AnyObject {
-    func didCloseModalViewController()
 }

@@ -54,12 +54,10 @@ final class EmployeeListVC: UIViewController {
         if alphabetSwitchState {
             viewModel.sortEmployeesAlphabetically()
         } else if birthdaySwitchState {
-//            viewModel.sortEmployeesByBirthday()
+            viewModel.sortEmployeesByBirthday()
         } else {
             viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex)
         }
-        
-        // ...
     }
     
     override func viewDidLoad() {
@@ -69,6 +67,7 @@ final class EmployeeListVC: UIViewController {
         setupCollectionViewAndTableView()
         fetchData()
         setupNotFoundImageView()
+
         // Проверяем значение alphabetSwitch.isSelected в UserDefaults
         let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
         if alphabetSwitchState {
@@ -76,7 +75,7 @@ final class EmployeeListVC: UIViewController {
             viewModel.employees.sort { $0.firstName < $1.firstName }
         }
     }
-    
+
     // MARK: - UI Setup
 
     private func setupUI() {
@@ -150,9 +149,7 @@ final class EmployeeListVC: UIViewController {
             make.height.equalTo(118)
         }
     }
-    
     // MARK: - Data Fetching
-
     private func fetchData() {
         viewModel.onEmployeesUpdated = { [weak self] in
             DispatchQueue.main.async {
@@ -166,9 +163,11 @@ final class EmployeeListVC: UIViewController {
 // MARK: - Search Controller Functions
 
 extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
+    
     func updateSearchResults(for searchController: UISearchController) {
         viewModel.updateSearchResults(searchText: searchController.searchBar.text)
         notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty
+        tableView.reloadData()
     }
 
     func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
@@ -177,15 +176,24 @@ extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
         filtersModalVC.modalPresentationStyle = .overCurrentContext
         present(filtersModalVC, animated: false, completion: nil)
     }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchController.searchBar.text = nil
+               viewModel.updateSearchResults(searchText: nil)
+               tableView.reloadData()
+    }
 }
 
 // MARK: - TableView Functions
 
 extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { viewModel.filteredEmployees.count }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EmployeeTableViewCell.identifier, for: indexPath) as? EmployeeTableViewCell else { fatalError("Unable to dequeue EmployeeCell") }
+        
+        
         
         let employee = viewModel.filteredEmployees[indexPath.row]
         let cellViewModel = EmployeeTableViewCellViewModel(employee: employee)
@@ -198,9 +206,10 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-//        let employee = viewModel.filteredEmployees[indexPath.row]
-//        let employeeDetailsVC = EmployeeDetailVC(employee)
-//        navigationController?.pushViewController(employeeDetailsVC, animated: true)
+        let employee = viewModel.filteredEmployees[indexPath.row]
+        let employeeDetailsVC = EmployeeDetailVC()
+        employeeDetailsVC.employee = employee
+        navigationController?.pushViewController(employeeDetailsVC, animated: true)
     }
 }
 
@@ -244,8 +253,8 @@ extension EmployeeListVC: UICollectionViewDelegate {
     }
 }
 
-extension EmployeeListVC: CustomModalViewControllerDelegate {
-    func didCloseModalViewController() {
+extension EmployeeListVC: FiltersModalVCDelegate {
+    func didCloseFiltersModalVC() {
         // Загрузка состояния переключателей из UserDefaults
         let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
         let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")

@@ -42,6 +42,14 @@ final class EmployeeTableViewCell: UITableViewCell {
         return label
     }()
     
+    private let birthdayLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .secondaryLabel
+        label.textAlignment = .right
+        label.font = .systemFont(ofSize: 15)
+        return label
+    }()
+    
     private let photoImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -68,6 +76,7 @@ final class EmployeeTableViewCell: UITableViewCell {
         fullNameLabel.text = viewModel.fullName
         positionLabel.text = viewModel.position
         userTagLabel.text = viewModel.userTag
+        updateBirthdayLabel()
 
         photoImageView.kf.setImage(with: viewModel.avatarURL, placeholder: UIImage(named: "placeholder"))
     }
@@ -77,6 +86,7 @@ final class EmployeeTableViewCell: UITableViewCell {
         fullNameLabel.text = nil
         positionLabel.text = nil
         userTagLabel.text = nil
+        birthdayLabel.text = nil
         photoImageView.image = nil
     }
     
@@ -87,6 +97,7 @@ final class EmployeeTableViewCell: UITableViewCell {
         addSubview(fullNameLabel)
         addSubview(positionLabel)
         addSubview(userTagLabel)
+        addSubview(birthdayLabel)
         
         photoImageView.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
@@ -108,6 +119,36 @@ final class EmployeeTableViewCell: UITableViewCell {
         userTagLabel.snp.makeConstraints { make in
             make.leading.equalTo(fullNameLabel.snp.trailing).offset(10)
             make.centerY.equalTo(fullNameLabel)
+        }
+        birthdayLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-20)
+            make.centerY.equalTo(fullNameLabel)
+        }
+    }
+    // MARK: Private methods
+    
+    private func updateBirthdayLabel() {
+        let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")
+        
+        if birthdaySwitchState {
+            if let birthdayString = viewModel?.birthday {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                
+                if let birthdayDate = dateFormatter.date(from: birthdayString) {
+                    let russianLocale = Locale(identifier: "ru_RU")
+                    dateFormatter.locale = russianLocale
+                    dateFormatter.dateFormat = "dd MMMM"
+                    let formattedDate = dateFormatter.string(from: birthdayDate)
+                    birthdayLabel.text = formattedDate
+                } else {
+                    birthdayLabel.text = nil
+                }
+            } else {
+                birthdayLabel.text = nil
+            }
+        } else {
+            birthdayLabel.text = nil
         }
     }
 }
