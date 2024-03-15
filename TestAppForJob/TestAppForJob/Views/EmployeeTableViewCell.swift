@@ -46,7 +46,7 @@ final class EmployeeTableViewCell: UITableViewCell {
         let label = UILabel()
         label.textColor = .secondaryLabel
         label.textAlignment = .right
-        label.font = .systemFont(ofSize: 15)
+        label.font = .systemFont(ofSize: 14)
         return label
     }()
     
@@ -122,7 +122,7 @@ final class EmployeeTableViewCell: UITableViewCell {
         }
         birthdayLabel.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-20)
-            make.centerY.equalTo(fullNameLabel)
+            make.centerY.equalTo(positionLabel)
         }
     }
     // MARK: Private methods

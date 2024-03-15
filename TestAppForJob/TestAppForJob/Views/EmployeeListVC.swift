@@ -178,9 +178,12 @@ extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        searchController.searchBar.text = nil
-               viewModel.updateSearchResults(searchText: nil)
-               tableView.reloadData()
+        searchController.isActive = false // Отключаем активность поискового контроллера
+        searchController.searchBar.text = nil // Очищаем текст поисковой строки
+        viewModel.updateSearchResults(searchText: nil) // Обновляем результаты поиска с пустым текстом
+        viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex) // Обновляем фильтры по категории
+        notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty // Обновляем видимость изображения "Не найдено"
+        tableView.reloadData() // Обновляем таблицу
     }
 }
 
@@ -192,9 +195,6 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EmployeeTableViewCell.identifier, for: indexPath) as? EmployeeTableViewCell else { fatalError("Unable to dequeue EmployeeCell") }
-        
-        
-        
         let employee = viewModel.filteredEmployees[indexPath.row]
         let cellViewModel = EmployeeTableViewCellViewModel(employee: employee)
         cell.configure(with: cellViewModel)
@@ -202,7 +202,7 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
     
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 100 }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 90 }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
