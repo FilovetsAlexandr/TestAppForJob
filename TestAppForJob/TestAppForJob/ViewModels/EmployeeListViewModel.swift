@@ -8,32 +8,116 @@
 import UIKit
 
 final class EmployeeListViewModel {
-    private var employees: [Employee] = []
+    // MARK: - Properties
+    
+    let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
+    
+    var employees: [Employee] = []
     var filteredEmployees: [Employee] = []
-    private var categoryFilteredEmployees: [Employee] = []
     var onEmployeesUpdated: (() -> Void)?
     var onErrorMessage: ((Error) -> Void)?
-    let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
-    private var inSearchMode: Bool = false
-    private var selectedCategoryIndex: Int = 0
+    var selectedCategoryIndex: Int = 0
+    
+    private var isFetchingData = false
+    private var searchResults: [Employee] = []
+    private var categoryFilteredEmployees: [Employee] = []
+    private var searchText: String?
+    
+    // MARK: - Public Methods
+    
+    func sortEmployeesAlphabetically() {
+        filteredEmployees.sort { $0.firstName < $1.firstName }
+        onEmployeesUpdated?()
+    }
+    
+    func sortEmployeesByBirthday() {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        filteredEmployees.sort { employee1, employee2 -> Bool in
+            let birthday1 = employee1.birthday
+            let birthday2 = employee2.birthday
+            
+            if let date1 = dateFormatter.date(from: birthday1), let date2 = dateFormatter.date(from: birthday2) {
+                let today = Date()
+                let calendar = Calendar.current
+                let components1 = calendar.dateComponents([.month, .day], from: date1)
+                let components2 = calendar.dateComponents([.month, .day], from: date2)
+                
+                if let upcomingBirthdayDate1 = calendar.nextDate(after: today, matching: components1, matchingPolicy: .nextTime),
+                   let upcomingBirthdayDate2 = calendar.nextDate(after: today, matching: components2, matchingPolicy: .nextTime)
+                {
+                    return upcomingBirthdayDate1 < upcomingBirthdayDate2
+                }
+            }
+            
+            return false
+        }
+        
+        onEmployeesUpdated?()
+    }
     
     func fetchEmployees() {
-        APIManager.shared.getEmployees { [weak self] result in
+        guard !isFetchingData else { return }
+            
+        isFetchingData = true
+            
+        APIManager.shared.fetchUserData() { [weak self] result in
+            self?.isFetchingData = false
+                
             switch result {
             case .success(let response):
                 self?.employees = response.items
-                self?.filteredEmployees = response.items
-                self?.onEmployeesUpdated?()
+                
+                // Применяем фильтры к загруженным сотрудникам
+                self?.applyFilters()
+                    
             case .failure(let error):
                 self?.onErrorMessage?(error)
             }
         }
+        onEmployeesUpdated?()
+    }
+    private func applyFilters() {
+        var filteredEmployees = employees
+        
+        // Применяем категорию
+        if selectedCategoryIndex != 0 {
+            let selectedCategory = categories[selectedCategoryIndex]
+            filteredEmployees = filteredEmployees.filter { $0.department.lowercased() == selectedCategory.lowercased() }
+        }
+        
+        // Применяем текст поиска
+        if let searchText = searchText?.lowercased(), !searchText.isEmpty {
+            filteredEmployees = filteredEmployees.filter { employee in
+                employee.firstName.lowercased().contains(searchText) ||
+                employee.lastName.lowercased().contains(searchText) ||
+                employee.userTag.lowercased().contains(searchText)
+            }
+        }
+        
+        // Сохраняем отфильтрованных сотрудников
+        self.filteredEmployees = filteredEmployees
+        
+        // Проверяем значение alphabetSwitch.isSelected в UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        if alphabetSwitchState {
+            // Если переключатель был выбран, сортируем пользователей по алфавиту
+            sortEmployeesAlphabetically()
+        } else {
+            sortEmployeesByBirthday()
+        }
+        
+        onEmployeesUpdated?()
     }
     
     func handleCategorySelection(at index: Int) {
+        let searchText = self.searchText
+        selectedCategoryIndex = index // Обновляем выбранную категорию
+        
         switch index {
         case 0:
-            categoryFilteredEmployees = employees
+            categoryFilteredEmployees = employees // Обновляем массив categoryFilteredEmployees для категории "Все"
         case 1:
             categoryFilteredEmployees = employees.filter { $0.department == "android" }
         case 2:
@@ -61,22 +145,32 @@ final class EmployeeListViewModel {
         default:
             categoryFilteredEmployees = employees
         }
-        filteredEmployees = categoryFilteredEmployees
-        onEmployeesUpdated?()
+        
+        if let alphabetSwitchState = UserDefaults.standard.object(forKey: "AlphabetSwitchState") as? Bool, alphabetSwitchState {
+            filteredEmployees = categoryFilteredEmployees // Обновляем массив filteredEmployees с учетом выбранной категории
+            sortEmployeesAlphabetically()
+        } else {
+            filteredEmployees = categoryFilteredEmployees // Обновляем массив filteredEmployees с учетом выбранной категории
+            sortEmployeesByBirthday()
+        }
+        
+        updateSearchResults(searchText: searchText)
     }
     
     func updateSearchResults(searchText: String?) {
-          guard let searchText = searchText?.lowercased(), !searchText.isEmpty else {
-              filteredEmployees = categoryFilteredEmployees
-              onEmployeesUpdated?()
-              return
-          }
-          
-          filteredEmployees = categoryFilteredEmployees.filter { employee in
-              employee.firstName.lowercased().contains(searchText) ||
-              employee.lastName.lowercased().contains(searchText) ||
-              employee.userTag.lowercased().contains(searchText)
-          }
-          onEmployeesUpdated?()
-      }
+        self.searchText = searchText ?? ""
+        
+        guard let searchText = searchText?.lowercased(), !searchText.isEmpty else {
+            categoryFilteredEmployees = filteredEmployees
+            onEmployeesUpdated?()
+            return
+        }
+        
+        filteredEmployees = categoryFilteredEmployees.filter { employee in
+            employee.firstName.lowercased().contains(searchText) ||
+            employee.lastName.lowercased().contains(searchText) ||
+            employee.userTag.lowercased().contains(searchText)
+        }
+        onEmployeesUpdated?()
+    }
 }

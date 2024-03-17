@@ -10,11 +10,12 @@ import UIKit
 
 final class EmployeeListVC: UIViewController {
     // MARK: - Variables
-
     private let viewModel: EmployeeListViewModel
+    private let errorLoadView = EmployeeErrorLoadView()
+    private let refreshControl = UIRefreshControl()
     
     // MARK: - UI Components
-
+    
     private let searchController = UISearchController(searchResultsController: nil)
     private let tableView: UITableView = {
         let tv = UITableView()
@@ -30,9 +31,19 @@ final class EmployeeListVC: UIViewController {
         imageView.isHidden = true
         return imageView
     }()
+
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.backgroundColor = .clear
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        return collectionView
+    }()
     
     // MARK: - LifeCycle
-
+    
     init(_ viewModel: EmployeeListViewModel = EmployeeListViewModel()) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -43,6 +54,23 @@ final class EmployeeListVC: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Загрузка состояния переключателей из UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")
+        
+        // Применение выбранной сортировки
+        if alphabetSwitchState {
+            viewModel.sortEmployeesAlphabetically()
+        } else if birthdaySwitchState {
+            viewModel.sortEmployeesByBirthday()
+        } else {
+            viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex)
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -50,6 +78,18 @@ final class EmployeeListVC: UIViewController {
         setupCollectionViewAndTableView()
         fetchData()
         setupNotFoundImageView()
+        
+        // Проверяем значение alphabetSwitch.isSelected в UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        if alphabetSwitchState {
+            // Если переключатель был выбран, сортируем пользователей по алфавиту
+            viewModel.employees.sort { $0.firstName < $1.firstName }
+        }
+        
+        // Настройка UIRefreshControl
+        refreshControl.tintColor = #colorLiteral(red: 0.3981328607, green: 0.2060295343, blue: 1, alpha: 1)
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        tableView.refreshControl = refreshControl
     }
     
     // MARK: - UI Setup
@@ -60,22 +100,12 @@ final class EmployeeListVC: UIViewController {
     
     private func setupCollectionViewAndTableView() {
         let containerView = UIView()
+        collectionView.dataSource = self
+        collectionView.delegate = self
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-
-        let collectionView: UICollectionView = {
-            let layout = UICollectionViewFlowLayout()
-            layout.scrollDirection = .horizontal
-            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-            collectionView.showsHorizontalScrollIndicator = false
-            collectionView.backgroundColor = .clear
-            collectionView.dataSource = self
-            collectionView.delegate = self
-            collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
-            return collectionView
-        }()
         
         containerView.addSubview(collectionView)
         collectionView.snp.makeConstraints { make in
@@ -95,10 +125,10 @@ final class EmployeeListVC: UIViewController {
         
         tableView.delegate = self
         tableView.dataSource = self
-        
+        tableView.separatorStyle = .none
         collectionView.selectItem(at: IndexPath(item: 0, section: 0), animated: false, scrollPosition: .centeredHorizontally)
     }
-
+    
     private func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
@@ -126,14 +156,66 @@ final class EmployeeListVC: UIViewController {
         }
     }
     
+    private func showErrorLoadView() {
+        //Скрываем элементы на экране
+        searchController.searchBar.isHidden = true
+        tableView.isHidden = true
+        notFoundImageView.isHidden = true
+        collectionView.isHidden = true
+        
+        // Устанавливаем размеры вью ошибки загрузки данных
+        errorLoadView.frame = CGRect(x: 0, y: 0, width: 200, height: 200)
+        errorLoadView.center = view.center
+        errorLoadView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+        errorLoadView.tryRequestButton.addTarget(self, action: #selector(tryRequestButtonTapped), for: .touchUpInside)
+        
+        // Добавляем вью ошибки загрузки данных на экран
+        view.addSubview(errorLoadView)
+    }
+    
+    private func hideErrorLoadView() {
+        DispatchQueue.main.async {
+            self.searchController.searchBar.isHidden = false
+            self.tableView.isHidden = false
+            self.collectionView.isHidden = false
+            self.errorLoadView.removeFromSuperview()
+        }
+    }
+    
+    @objc private func tryRequestButtonTapped() {
+        fetchData()
+    }
+    
+    private func handleLoadingError(hasError: Bool) {
+        if hasError {
+            showErrorLoadView()
+        } else {
+            hideErrorLoadView()
+        }
+    }
+
     // MARK: - Data Fetching
 
+    @objc private func refreshData() {
+        fetchData()
+    }
+    
     private func fetchData() {
         viewModel.onEmployeesUpdated = { [weak self] in
             DispatchQueue.main.async {
                 self?.tableView.reloadData()
+                self?.refreshControl.endRefreshing()
+            }
+            self?.handleLoadingError(hasError: false) // Скрываем вью ошибки загрузки данных
+        }
+        
+        viewModel.onErrorMessage = { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.handleLoadingError(hasError: true) // Показываем вью ошибки загрузки данных
+                self?.refreshControl.endRefreshing()
             }
         }
+        
         viewModel.fetchEmployees()
     }
 }
@@ -144,10 +226,23 @@ extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
     func updateSearchResults(for searchController: UISearchController) {
         viewModel.updateSearchResults(searchText: searchController.searchBar.text)
         notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty
+        tableView.reloadData()
+    }
+
+    func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
+        let filtersModalVC = EmployeeFiltersModalVC()
+        filtersModalVC.delegate = self
+        filtersModalVC.modalPresentationStyle = .overCurrentContext
+        present(filtersModalVC, animated: false, completion: nil)
     }
     
-    func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
-        print("bookmark clicked")
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchController.isActive = false // Отключаем активность поискового контроллера
+        searchController.searchBar.text = nil // Очищаем текст поисковой строки
+        viewModel.updateSearchResults(searchText: nil) // Обновляем результаты поиска с пустым текстом
+        viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex) // Обновляем фильтры по категории
+        notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty // Обновляем видимость изображения "Не найдено"
+        tableView.reloadData() // Обновляем таблицу
     }
 }
 
@@ -158,22 +253,25 @@ extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EmployeeTableViewCell.identifier, for: indexPath) as? EmployeeTableViewCell else { fatalError("Unable to dequeue EmployeeCell") }
-        
         let employee = viewModel.filteredEmployees[indexPath.row]
-        cell.configure(with: employee)
+        let cellViewModel = EmployeeTableViewCellViewModel(employee: employee)
+        cell.configure(with: cellViewModel)
+        
         return cell
     }
     
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 100 }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 90 }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
-//        let employee = viewModel.filteredEmployees[indexPath.row]
-//        let employeeDetailsVC = EmployeeDetailVC(employee)
-//        navigationController?.pushViewController(employeeDetailsVC, animated: true)
+        let employee = viewModel.filteredEmployees[indexPath.row]
+        let employeeDetailsVC = EmployeeDetailVC()
+        employeeDetailsVC.employee = employee
+        navigationController?.pushViewController(employeeDetailsVC, animated: true)
     }
 }
+
+// MARK: - CollectionView Functions
 
 extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { viewModel.categories.count }
@@ -183,7 +281,10 @@ extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFl
         
         let categories = viewModel.categories
         let category = categories[indexPath.item]
-        cell.nameCategoryLabel.text = category
+        let isSelected = indexPath.item == viewModel.selectedCategoryIndex
+        let categoryViewModel = EmployeeHorizontalCategoriesCellViewModel(category: category, isSelected: isSelected)
+        cell.configure(with: categoryViewModel)
+        
         return cell
     }
     
@@ -193,9 +294,12 @@ extension EmployeeListVC: UICollectionViewDataSource, UICollectionViewDelegateFl
         
         let categories = viewModel.categories
         let category = categories[indexPath.item]
-        cell.nameCategoryLabel.text = category
+        let isSelected = indexPath.item == viewModel.selectedCategoryIndex
+        let categoryViewModel = EmployeeHorizontalCategoriesCellViewModel(category: category, isSelected: isSelected)
+        cell.configure(with: categoryViewModel)
         
         let size = cell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        
         return CGSize(width: size.width + 15, height: 30)
     }
 }
@@ -204,5 +308,22 @@ extension EmployeeListVC: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         viewModel.handleCategorySelection(at: indexPath.item)
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+    }
+}
+
+extension EmployeeListVC: FiltersModalVCDelegate {
+    func didCloseFiltersModalVC() {
+        // Загрузка состояния переключателей из UserDefaults
+        let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
+        let birthdaySwitchState = UserDefaults.standard.bool(forKey: "BirthdaySwitchState")
+        
+        // Применение выбранной сортировки
+        if alphabetSwitchState {
+            viewModel.sortEmployeesAlphabetically()
+        } else if birthdaySwitchState {
+            viewModel.sortEmployeesByBirthday()
+        } else {
+            viewModel.handleCategorySelection(at: viewModel.selectedCategoryIndex)
+        }
     }
 }
