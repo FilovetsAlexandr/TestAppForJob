@@ -12,26 +12,16 @@ final class EmployeeListViewModel {
     
     let categories = ["Все", "Android", "iOS", "Дизайн", "Менеджмент", "QA", "Бэк-офис", "Frontend", "HR", "PR", "Backend", "Техподдержка", "Аналитика"]
     
-    var isAlphabeticallySorted: Bool = false
-    private var isFetchingData = false
     var employees: [Employee] = []
-    var searchResults: [Employee] = []
-    private var categoryFilteredEmployees: [Employee] = []
-    private var inSearchMode: Bool = false
-    private var pastBirthdayEmployees: [Employee] = []
     var filteredEmployees: [Employee] = []
     var onEmployeesUpdated: (() -> Void)?
     var onErrorMessage: ((Error) -> Void)?
     var selectedCategoryIndex: Int = 0
-    var searchText: String?
-    var birthdayEmployees: [Employee] = []
-    var nonBirthdayEmployees: [Employee] = []
     
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMMM"
-        return formatter
-    }()
+    private var isFetchingData = false
+    private var searchResults: [Employee] = []
+    private var categoryFilteredEmployees: [Employee] = []
+    private var searchText: String?
     
     // MARK: - Public Methods
     
@@ -72,7 +62,7 @@ final class EmployeeListViewModel {
             
         isFetchingData = true
             
-        APIManager.shared.getEmployees { [weak self] result in
+        APIManager.shared.fetchUserData() { [weak self] result in
             self?.isFetchingData = false
                 
             switch result {

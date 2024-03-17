@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F45462282BA5912700D433F2 /* EmployeeErrorLoadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45462272BA5912700D433F2 /* EmployeeErrorLoadView.swift */; };
 		F4BC8BC72B964DBC00C542DD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8BC62B964DBC00C542DD /* AppDelegate.swift */; };
 		F4BC8BC92B964DBC00C542DD /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BC8BC82B964DBC00C542DD /* SceneDelegate.swift */; };
 		F4BC8BD02B964DBF00C542DD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F4BC8BCF2B964DBF00C542DD /* Assets.xcassets */; };
@@ -33,6 +34,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F45462272BA5912700D433F2 /* EmployeeErrorLoadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeeErrorLoadView.swift; sourceTree = "<group>"; };
 		F4BC8BC32B964DBC00C542DD /* TestAppForJob.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestAppForJob.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4BC8BC62B964DBC00C542DD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F4BC8BC82B964DBC00C542DD /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				F4BC8BEF2B969FEF00C542DD /* EmployeeTableViewCell.swift */,
 				F4BC8BFF2B9F15FF00C542DD /* EmployeeHorizontalCategoriesCollectionViewCell.swift */,
 				F4BC8C052BA0826200C542DD /* EmployeeFiltersModalVC.swift */,
+				F45462272BA5912700D433F2 /* EmployeeErrorLoadView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -265,6 +268,7 @@
 				F4BC8BDF2B9650B500C542DD /* Employee.swift in Sources */,
 				F4BC8BC92B964DBC00C542DD /* SceneDelegate.swift in Sources */,
 				F4BC8C162BA4944800C542DD /* EmployeeProfileView.swift in Sources */,
+				F45462282BA5912700D433F2 /* EmployeeErrorLoadView.swift in Sources */,
 				F4BC8BF22B972C6600C542DD /* EmployeeListViewModel.swift in Sources */,
 				F4BC8C092BA1A34D00C542DD /* UIImage.swift in Sources */,
 				F4BC8C042BA06E4900C542DD /* EmployeeHorizontalCategoriesCellViewModel.swift in Sources */,

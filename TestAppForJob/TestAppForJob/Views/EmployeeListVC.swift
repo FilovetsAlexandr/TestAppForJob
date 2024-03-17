@@ -10,8 +10,9 @@ import UIKit
 
 final class EmployeeListVC: UIViewController {
     // MARK: - Variables
-
     private let viewModel: EmployeeListViewModel
+    private let errorLoadView = EmployeeErrorLoadView()
+    private let refreshControl = UIRefreshControl()
     
     // MARK: - UI Components
     
@@ -30,9 +31,19 @@ final class EmployeeListVC: UIViewController {
         imageView.isHidden = true
         return imageView
     }()
+
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.backgroundColor = .clear
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        return collectionView
+    }()
     
     // MARK: - LifeCycle
-
+    
     init(_ viewModel: EmployeeListViewModel = EmployeeListViewModel()) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -67,39 +78,34 @@ final class EmployeeListVC: UIViewController {
         setupCollectionViewAndTableView()
         fetchData()
         setupNotFoundImageView()
-
+        
         // Проверяем значение alphabetSwitch.isSelected в UserDefaults
         let alphabetSwitchState = UserDefaults.standard.bool(forKey: "AlphabetSwitchState")
         if alphabetSwitchState {
             // Если переключатель был выбран, сортируем пользователей по алфавиту
             viewModel.employees.sort { $0.firstName < $1.firstName }
         }
+        
+        // Настройка UIRefreshControl
+        refreshControl.tintColor = #colorLiteral(red: 0.3981328607, green: 0.2060295343, blue: 1, alpha: 1)
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        tableView.refreshControl = refreshControl
     }
-
+    
     // MARK: - UI Setup
-
+    
     private func setupUI() {
         view.backgroundColor = .systemBackground
     }
     
     private func setupCollectionViewAndTableView() {
         let containerView = UIView()
+        collectionView.dataSource = self
+        collectionView.delegate = self
         view.addSubview(containerView)
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-
-        let collectionView: UICollectionView = {
-            let layout = UICollectionViewFlowLayout()
-            layout.scrollDirection = .horizontal
-            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-            collectionView.showsHorizontalScrollIndicator = false
-            collectionView.backgroundColor = .clear
-            collectionView.dataSource = self
-            collectionView.delegate = self
-            collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
-            return collectionView
-        }()
         
         containerView.addSubview(collectionView)
         collectionView.snp.makeConstraints { make in
@@ -119,10 +125,10 @@ final class EmployeeListVC: UIViewController {
         
         tableView.delegate = self
         tableView.dataSource = self
-        
+        tableView.separatorStyle = .none
         collectionView.selectItem(at: IndexPath(item: 0, section: 0), animated: false, scrollPosition: .centeredHorizontally)
     }
-
+    
     private func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
@@ -149,13 +155,67 @@ final class EmployeeListVC: UIViewController {
             make.height.equalTo(118)
         }
     }
+    
+    private func showErrorLoadView() {
+        //Скрываем элементы на экране
+        searchController.searchBar.isHidden = true
+        tableView.isHidden = true
+        notFoundImageView.isHidden = true
+        collectionView.isHidden = true
+        
+        // Устанавливаем размеры вью ошибки загрузки данных
+        errorLoadView.frame = CGRect(x: 0, y: 0, width: 200, height: 200)
+        errorLoadView.center = view.center
+        errorLoadView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
+        errorLoadView.tryRequestButton.addTarget(self, action: #selector(tryRequestButtonTapped), for: .touchUpInside)
+        
+        // Добавляем вью ошибки загрузки данных на экран
+        view.addSubview(errorLoadView)
+    }
+    
+    private func hideErrorLoadView() {
+        DispatchQueue.main.async {
+            self.searchController.searchBar.isHidden = false
+            self.tableView.isHidden = false
+            self.collectionView.isHidden = false
+            self.errorLoadView.removeFromSuperview()
+        }
+    }
+    
+    @objc private func tryRequestButtonTapped() {
+        fetchData()
+    }
+    
+    private func handleLoadingError(hasError: Bool) {
+        if hasError {
+            showErrorLoadView()
+        } else {
+            hideErrorLoadView()
+        }
+    }
+
     // MARK: - Data Fetching
+
+    @objc private func refreshData() {
+        fetchData()
+    }
+    
     private func fetchData() {
         viewModel.onEmployeesUpdated = { [weak self] in
             DispatchQueue.main.async {
                 self?.tableView.reloadData()
+                self?.refreshControl.endRefreshing()
+            }
+            self?.handleLoadingError(hasError: false) // Скрываем вью ошибки загрузки данных
+        }
+        
+        viewModel.onErrorMessage = { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.handleLoadingError(hasError: true) // Показываем вью ошибки загрузки данных
+                self?.refreshControl.endRefreshing()
             }
         }
+        
         viewModel.fetchEmployees()
     }
 }
@@ -163,7 +223,6 @@ final class EmployeeListVC: UIViewController {
 // MARK: - Search Controller Functions
 
 extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
-    
     func updateSearchResults(for searchController: UISearchController) {
         viewModel.updateSearchResults(searchText: searchController.searchBar.text)
         notFoundImageView.isHidden = !viewModel.filteredEmployees.isEmpty
@@ -190,7 +249,6 @@ extension EmployeeListVC: UISearchResultsUpdating, UISearchBarDelegate {
 // MARK: - TableView Functions
 
 extension EmployeeListVC: UITableViewDelegate, UITableViewDataSource {
-    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { viewModel.filteredEmployees.count }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
