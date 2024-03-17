@@ -1,5 +1,8 @@
 # TestAppForJob
-MVVM project with Alamofire for KODE trainee iOS 2024
+
+https://github.com/FilovetsAlexandr/TestAppForJob/assets/141730867/14500170-a2c1-42c6-a1f5-ff00697a0b60
+
+MVVM project for KODE trainee iOS 2024
 
 # Настройка проекта
   - Организовать код и наше будущее приложение под паттерн проектирование (модель) MVVM
